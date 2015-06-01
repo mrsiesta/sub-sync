@@ -1,12 +1,12 @@
 #!/usr/bin/python
-__author__ = 'siesta'
+__author__ = 'Dylan Williams'
 from datetime import datetime, timedelta
 import argparse
 import codecs
 import chardet
 import os
 import sys
-import pdb
+import time
 
 # Improvements:
 #  Support more than just srt files
@@ -15,10 +15,10 @@ import pdb
 #  Verbosity levels
 
 # Get input and output filenames, get delta
-parser = argparse.ArgumentParser(description='Simple script for adjusting subtitle time offset')
-parser.add_argument('-s', '--sub_in', help='the file path of the sub to adjust')
-parser.add_argument('-a', '--amount', type=float, help='the file path of the sub to adjust')
-parser.add_argument('-o', '--sub_out', help='the location to output the adjusted subtitle')
+parser = argparse.ArgumentParser(description='A simple script for adjusting subtitle time offset')
+parser.add_argument('-s', '--sub_in', help='The file path of the sub to adjust')
+parser.add_argument('-a', '--amount', type=float, help='The amount of time to adjust by')
+parser.add_argument('-o', '--sub_out', help='The output file path')
 args = parser.parse_args()
 
 f_input = args.sub_in
@@ -58,12 +58,13 @@ else:
 subs_raw = f_in.readlines()
 f_in.close()
 
+s_time = time.time()
 # Read in file
-print('Reading file..\n  %s\n' % f_input)
+print('Reading file.. %s' % f_input)
 subs_blob = ''.join(subs_raw)
 subs_list = [i for i in subs_blob.split('\r\n\r\n')]
 subs_dict = {}
-print('Updating timestamps by %s seconds!' % delta)
+sys.stdout.write('Updating timestamps by %s seconds!' % delta)
 # Build subs_dict and update times
 for i in subs_list:
     if i != '':
@@ -83,8 +84,6 @@ for i in subs_list:
         except Exception, e:
             print('%s' % str(e))
 
-print('\n\nAssembling new subfile\n')
-
 # Put the new blob back together and write it out to new file
 new_subs = ''
 for i in range(1, len(subs_dict)):
@@ -102,8 +101,8 @@ for i in range(1, len(subs_dict)):
         except Exception:
             print('subs_dict missing text value for sub line %s' % i)
 
-print('Writing file:\n  %s' % f_output)
 with open(f_output, 'w') as f_out:
     f_out.write(new_subs)
 
-print('All done.')
+t_time = time.time() - s_time
+print('\n\n  Wrote  %s  in %3.2f seconds\n' % (f_output, t_time))
