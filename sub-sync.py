@@ -12,7 +12,7 @@ import pdb
 #  Support more than just srt files
 #  Convert between different subtitle formats
 #  Create API and web frontend with cherrypy
-#  Add verbosity to output
+#  Verbosity levels
 
 # Get input and output filenames, get delta
 parser = argparse.ArgumentParser(description='Simple script for adjusting subtitle time offset')
@@ -21,13 +21,26 @@ parser.add_argument('-a', '--amount', type=float, help='the file path of the sub
 parser.add_argument('-o', '--sub_out', help='the location to output the adjusted subtitle')
 args = parser.parse_args()
 
-
-# TODO: Make sure file exists, if not raise exception
 f_input = args.sub_in
+if not os.path.isfile(f_input):
+    print(' **ERROR  Input file not found:\n\t%s' % f_input)
+    sys.exit(1)
+if '.srt' not in f_input:
+    print(' **ERROR  Currently only srt formatted files are accepted.')
+    sys.exit(1)
+
 f_output = args.sub_out
+try:
+    with open(f_output, 'a') as output_test:
+        pass
+except Exception, e:
+    print(' ** ERROR  The output file destination is not writable.\n%s' % e)
+    sys.exit(1)
+
 delta = args.amount
 delta_s = int(delta)
 delta_ms = int(str(delta).split('.')[1])
+
 # Test for BOM-UTF8 file
 _bytes = min(32, os.path.getsize(f_input))
 raw = open(f_input, 'rb').read(_bytes)
@@ -37,7 +50,11 @@ else:
     result = chardet.detect(raw)
     encoding = result['encoding']
 
-f_in = codecs.open(f_input, 'r', encoding=encoding)
+if encoding == 'ascii':
+    f_in = open(f_input, 'r')
+else:
+    f_in = codecs.open(f_input, 'r', encoding=encoding)
+
 subs_raw = f_in.readlines()
 f_in.close()
 
@@ -56,14 +73,15 @@ for i in subs_list:
             pos_start, pos_end = lx[1].split(' --> ')
             text = '\r\n'.join(lx[2:])
             # Update positions
-            dt_start = datetime.strftime(str(datetime.strptime(pos_start, '%H:%M:%S,%f') + timedelta(seconds=delta_s, milliseconds=delta_ms)), '%H:%M:%S,%f')
-            dt_end = datetime.strftime(str(datetime.strptime(pos_end, '%H:%M:%S,%f') + timedelta(seconds=delta_s, milliseconds=delta_ms)), '%H:%M:%S,%f')
+            dt_start = datetime.strftime(datetime.strptime(pos_start, '%H:%M:%S,%f') +
+                                             timedelta(seconds=delta_s, milliseconds=delta_ms), '%H:%M:%S,%f')
+            dt_end = datetime.strftime(datetime.strptime(pos_end, '%H:%M:%S,%f') +
+                                           timedelta(seconds=delta_s, milliseconds=delta_ms), '%H:%M:%S,%f')
             pos = '%1.12s' % dt_start + ' --> ' + '%1.12s' % dt_end
             subs_dict[id] = {'pos': pos, 'text': text}
             sys.stdout.write('!')
         except Exception, e:
             print('%s' % str(e))
-            pdb.set_trace()
 
 print('\n\nAssembling new subfile\n')
 
