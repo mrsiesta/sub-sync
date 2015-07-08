@@ -58,6 +58,25 @@ else:
 subs_raw = f_in.readlines()
 f_in.close()
 
+def adj_time(time_str):
+    new_time = str(datetime.strptime(time_str, '%H:%M:%S,%f') + timedelta(seconds=delta_s, milliseconds=delta_ms))
+    time_formatted = datetime.strftime(new_time, '%H:%M:%S,%f')
+    return(time_formatted)
+
+def build_subs(sub, subs_dict):
+    lx = sub.strip().split('\r\n')
+    sub_id = int(lx[0])
+    pos_start, pos_end = lx[1].split(' --> ')
+    text = '\r\n'.join(lx[2:])
+    # Update positions
+    dt_start = adj_time(pos_start)
+    dt_end = adj_time(pos_end)
+    new_pos = '%1.12s' % dt_start + ' --> ' + '%1.12s' % dt_end
+    subs_dict[sub_id] = {'pos': new_pos, 'text': text}
+    return(subs_dict)
+
+def gen
+
 s_time = time.time()
 # Read in file
 print('Reading file.. %s' % f_input)
@@ -69,17 +88,7 @@ sys.stdout.write('Updating timestamps by %s seconds!' % delta)
 for i in subs_list:
     if i != '':
         try:
-            lx = i.strip().split('\r\n')
-            id = int(lx[0])
-            pos_start, pos_end = lx[1].split(' --> ')
-            text = '\r\n'.join(lx[2:])
-            # Update positions
-            dt_start = datetime.strftime(datetime.strptime(pos_start, '%H:%M:%S,%f') +
-                                             timedelta(seconds=delta_s, milliseconds=delta_ms), '%H:%M:%S,%f')
-            dt_end = datetime.strftime(datetime.strptime(pos_end, '%H:%M:%S,%f') +
-                                           timedelta(seconds=delta_s, milliseconds=delta_ms), '%H:%M:%S,%f')
-            pos = '%1.12s' % dt_start + ' --> ' + '%1.12s' % dt_end
-            subs_dict[id] = {'pos': pos, 'text': text}
+            build_subs(i, subs_dict)
             sys.stdout.write('!')
         except Exception, e:
             print('%s' % str(e))
@@ -97,7 +106,7 @@ for i in range(1, len(subs_dict)):
         except Exception:
             print('subs_dict missing pos value for sub line %s' % i)
         try:
-           _text = subs_dict[i]['text']
+            _text = subs_dict[i]['text']
         except Exception:
             print('subs_dict missing text value for sub line %s' % i)
 
