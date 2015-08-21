@@ -7,7 +7,6 @@ import chardet
 import os
 import sys
 import time
-import pdb
 
 # TODO
 #  Support additional file formats
