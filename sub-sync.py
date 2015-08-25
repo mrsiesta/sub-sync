@@ -24,13 +24,14 @@ sub_file = args.sub_in
 output_file = args.sub_out
 delta = args.amount
 delta_s = int(delta)
-delta_ms = int(str(delta).split('.')[1]) * 10  # Need to multiply by 10 for correct ms precision
+delta_ms = int(str(delta).split('.')[1]) * 10
+strptime = datetime.strptime
+strftime = datetime.strftime
 
 
 def adj_time(time_str):
-    new_time = datetime.strptime(time_str, '%H:%M:%S,%f') + timedelta(seconds=delta_s, milliseconds=delta_ms)
-    time_formatted = datetime.strftime(new_time, '%H:%M:%S,%f')
-    return time_formatted
+    new_time = strptime(time_str, '%H:%M:%S,%f') + timedelta(seconds=delta_s, milliseconds=delta_ms)
+    return strftime(new_time, '%H:%M:%S,%f')
 
 
 def build_sub_dict(sub, subs_dict):
@@ -42,7 +43,7 @@ def build_sub_dict(sub, subs_dict):
     # Update positions
     dt_start = adj_time(pos_start)
     dt_end = adj_time(pos_end)
-    new_pos = '%1.12s' % dt_start + ' --> ' + '%1.12s' % dt_end
+    new_pos = '%1.12s --> %1.12s' % (dt_start, dt_end)
     subs_dict[sub_id] = {'pos': new_pos, 'text': text}
     return subs_dict
 
@@ -51,13 +52,14 @@ def create_formatted_subs(unformatted_sub_list):
     subs_blob = ''.join(unformatted_sub_list)
     subs_list = [i for i in subs_blob.split('\r\n\r\n')]
     subs_dict = {}
-    sys.stdout.write('Updating timestamps by %s seconds!' % delta)
+    write = sys.stdout.write
+    write('Updating timestamps by %s seconds!' % delta)
     # Build subs_dict and update times
     for i in subs_list:
         if i != '':
             try:
                 build_sub_dict(i, subs_dict)
-                sys.stdout.write('!')
+                write('!')
             except Exception, e:
                 print('%s' % str(e))
 
